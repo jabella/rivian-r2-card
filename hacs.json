@@ -1,0 +1,6 @@
+{
+  "name": "Rivian R2 Card",
+  "filename": "rivian-r2-card.js",
+  "render_readme": true,
+  "homeassistant": "2024.8.0"
+}
