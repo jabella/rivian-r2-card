@@ -19,7 +19,7 @@ Built for the R2 specifically: no gear tunnel, tonneau, tailgate or powered char
 1. HACS → ⋮ → *Custom repositories* → add `https://github.com/jabella/rivian-r2-card`, type **Dashboard**.
 2. Install **Rivian R2 Card**, then reload your browser.
 
-**Manual:** copy `rivian-r2-card.js` to `config/www/` and add it as a dashboard resource (`/local/rivian-r2-card.js`, type *JavaScript module*). After updating the file, change the resource URL (e.g. `/local/rivian-r2-card.js?v=0.1.1`) so browsers and the companion app load the new version.
+**Manual:** copy `rivian-r2-card.js` to `config/www/` and add it as a dashboard resource (`/local/rivian-r2-card.js`, type *JavaScript module*). After updating the file, change the resource URL (e.g. `/local/rivian-r2-card.js?v=0.1.2`) so browsers and the companion app load the new version.
 
 ## Configure
 
