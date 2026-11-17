@@ -9,7 +9,7 @@
  * MIT License.
  */
 
-const CARD_VERSION = "0.1.2";
+const CARD_VERSION = "0.1.3";
 
 /* ------------------------------------------------------------------ *
  * Closure schematic
@@ -220,17 +220,17 @@ class RivianR2Card extends HTMLElement {
       }
     }
     if (!id) return undefined;
-    if (id.startsWith("http") || id.startsWith("/")) return id;
-    return this._hass.states[id]?.attributes?.entity_picture;
+    const url = /^(https?:\/\/|\/)/i.test(id) ? id : this._hass.states[id]?.attributes?.entity_picture;
+    return typeof url === "string" && /^(https?:\/\/|\/)/i.test(url) ? url : undefined;
   }
 
   /* Integration renders sit on a large transparent canvas. Measure the
      opaque area once per URL and crop to it so the car fills the card. */
   _vehicleImg(src) {
     const t = (this._trim ||= {})[src];
-    if (!t) return `<div class="crop"><img class="vehicle" src="${src}" alt="" data-trim></div>`;
+    if (!t) return `<div class="crop"><img class="vehicle" src="${esc(src)}" alt="" data-trim></div>`;
     return `<div class="crop" style="aspect-ratio:${t.w} / ${t.h}">
-      <img class="vehicle trimmed" src="${src}" alt=""
+      <img class="vehicle trimmed" src="${esc(src)}" alt=""
         style="width:${t.sw}%;margin-left:-${t.sx}%;margin-top:-${t.sy}%"></div>`;
   }
 
@@ -321,7 +321,7 @@ class RivianR2Card extends HTMLElement {
   _powerBadge() {
     const p = this._st("power_state");
     if (!p || ["unavailable", "unknown"].includes(p.state)) return "";
-    return `<span class="badge" data-entity="${p.entity_id}">${esc(this._fmt(p))}</span>`;
+    return `<span class="badge" data-entity="${esc(p.entity_id)}">${esc(this._fmt(p))}</span>`;
   }
 
   _renderOverhead() {
@@ -354,7 +354,7 @@ class RivianR2Card extends HTMLElement {
       const cls = ["part", p.glass ? "glass" : "panel", open ? "open" : "", missing ? "na" : ""].join(" ");
       const tf = open && p.hinge ? ` transform="rotate(${p.swing} ${p.hinge[0]} ${p.hinge[1]})"` : "";
       const title = p.label ? `<title>${p.label}${open ? " open" : missing ? " (no sensor)" : ""}</title>` : "";
-      return `<path class="${cls}" d="${p.d}"${tf}${id ? ` data-entity="${id}"` : ""}>${title}</path>`;
+      return `<path class="${cls}" d="${p.d}"${tf}${id ? ` data-entity="${esc(id)}"` : ""}>${title}</path>`;
     }).join("");
     return `<svg class="schematic ${unlocked ? "unlocked" : ""}" viewBox="-14 -4 128 228">
       <path class="body" d="${BODY}"/><path class="cabin" d="${CABIN}"/>${parts}</svg>`;
@@ -365,15 +365,15 @@ class RivianR2Card extends HTMLElement {
     const [bx, by, bw, bh] = OVERHEAD.box;
     const parts = SCHEMATIC.filter((p) => OVERHEAD.shapes[p.id]).map((p) => {
       const { id, open } = this._partState(p);
-      if (!open) return id ? `<path class="hit" d="${OVERHEAD.shapes[p.id].d}" data-entity="${id}"><title>${p.label}</title></path>` : "";
+      if (!open) return id ? `<path class="hit" d="${OVERHEAD.shapes[p.id].d}" data-entity="${esc(id)}"><title>${p.label}</title></path>` : "";
       const sh = OVERHEAD.shapes[p.id];
       const swung = sh.hinge
         ? `<path class="ov open" d="${sh.d}" transform="rotate(${sh.swing} ${sh.hinge[0]} ${sh.hinge[1]})"/>`
         : "";
-      return `<path class="ov ${sh.hinge ? "gap" : "open"}" d="${sh.d}" data-entity="${id}"><title>${p.label} open</title></path>${swung}`;
+      return `<path class="ov ${sh.hinge ? "gap" : "open"}" d="${sh.d}" data-entity="${esc(id)}"><title>${p.label} open</title></path>${swung}`;
     }).join("");
     return `<div class="topview ${unlocked ? "unlocked" : ""}" style="aspect-ratio:${bw} / ${bh}">
-      <img src="${src}" alt="" style="width:${(cw / bw) * 100}%;margin-left:-${(bx / bw) * 100}%;margin-top:-${(by / bw) * 100}%">
+      <img src="${esc(src)}" alt="" style="width:${(cw / bw) * 100}%;margin-left:-${(bx / bw) * 100}%;margin-top:-${(by / bw) * 100}%">
       <svg viewBox="${bx} ${by} ${bw} ${bh}">${parts}</svg>
     </div>`;
   }
@@ -426,7 +426,7 @@ class RivianR2Card extends HTMLElement {
     const limit = this._num("limit");
     const charging = this._isOn("charging");
     const level = soc <= 15 ? "low" : soc <= 30 ? "mid" : "ok";
-    return `<div class="bar ${level} ${charging ? "charging" : ""}" data-entity="${this._eid("soc")}">
+    return `<div class="bar ${level} ${charging ? "charging" : ""}" data-entity="${esc(this._eid("soc"))}">
       <div class="fill" style="width:${clamp(soc)}%"></div>
       ${limit !== undefined ? `<div class="limit" style="left:${clamp(limit)}%" title="Limit ${limit}%"></div>` : ""}
     </div>`;
@@ -444,7 +444,7 @@ class RivianR2Card extends HTMLElement {
     const stat = (role, icon, label) => {
       const st = this._st(role);
       if (!st) return "";
-      return `<div class="stat" data-entity="${st.entity_id}">
+      return `<div class="stat" data-entity="${esc(st.entity_id)}">
         <ha-icon icon="${icon}"></ha-icon>
         <div class="v">${esc(this._fmt(st))}</div><div class="l">${label}</div></div>`;
     };
@@ -470,9 +470,9 @@ class RivianR2Card extends HTMLElement {
         ${img ? this._vehicleImg(img) : ""}
       </div>
       <div class="charge-head">
-        <span class="cstate ${charging ? "charging" : ""}" data-entity="${this._eid("plugged") || ""}">
+        <span class="cstate ${charging ? "charging" : ""}" data-entity="${esc(this._eid("plugged") || "")}">
           <ha-icon icon="${stateIcon}"></ha-icon>${stateLabel}</span>
-        ${soc ? `<span class="socbig" data-entity="${soc.entity_id}">${esc(this._fmt(soc))}</span>` : ""}
+        ${soc ? `<span class="socbig" data-entity="${esc(soc.entity_id)}">${esc(this._fmt(soc))}</span>` : ""}
       </div>
       ${this._socBar()}
       <div class="stats">${stats}</div>`;
@@ -480,12 +480,15 @@ class RivianR2Card extends HTMLElement {
 }
 
 function chip(entity, icon, text, cls = "") {
-  return `<button class="chip ${cls}" data-entity="${entity}">
+  return `<button class="chip ${cls}" data-entity="${esc(entity)}">
     <ha-icon icon="${icon}"></ha-icon><span>${esc(text)}</span></button>`;
 }
 function clamp(v) {
   return Math.max(0, Math.min(100, v));
 }
+/* Escape for both text and quoted attribute values. Every value that comes
+   from config, entity attributes or state goes through this before it is
+   placed in an innerHTML template. */
 function esc(s) {
   return String(s).replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
